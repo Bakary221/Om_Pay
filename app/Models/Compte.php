@@ -94,4 +94,53 @@ class Compte extends Model
             'user_id' => $this->user_id,
         ]);
     }
+
+    /**
+     * Generate and save QR code file
+     */
+    public function generateQrCodeFile(): string
+    {
+        try {
+            $qrCodeData = $this->generateQrCodeData();
+            $filename = 'qrcode_' . $this->numero_compte . '.png';
+            $path = storage_path('app/qrcodes/' . $filename);
+
+            // Ensure directory exists
+            $directory = dirname($path);
+            if (!is_dir($directory)) {
+                mkdir($directory, 0755, true);
+            }
+
+            // Generate QR code using GD backend (no imagick needed)
+            $qrCode = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
+                ->size(300)
+                ->margin(4)
+                ->generate($qrCodeData);
+
+            // Save to file
+            file_put_contents($path, $qrCode);
+
+            return $filename;
+        } catch (\Exception $e) {
+            // Log error but don't fail the registration
+            \Illuminate\Support\Facades\Log::error('Failed to generate QR code: ' . $e->getMessage());
+            return '';
+        }
+    }
+
+    /**
+     * Get QR code file path
+     */
+    public function getQrCodePath(): string
+    {
+        return storage_path('app/qrcodes/qrcode_' . $this->numero_compte . '.png');
+    }
+
+    /**
+     * Check if QR code file exists
+     */
+    public function hasQrCodeFile(): bool
+    {
+        return file_exists($this->getQrCodePath());
+    }
 }

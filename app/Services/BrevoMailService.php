@@ -2,13 +2,14 @@
 
 namespace App\Services;
 
-use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
+use SendGrid;
+use SendGrid\Mail\Mail;
 
 class BrevoMailService
 {
     /**
-     * Send OTP email using Brevo API
+     * Send OTP email using SendGrid API
      *
      * @param string $toEmail
      * @param string $toName
@@ -18,42 +19,33 @@ class BrevoMailService
     public static function sendOtp($toEmail, $toName, $otp)
     {
         try {
-            $apiKey = env('BREVO_API_KEY');
-            $senderEmail = env('BREVO_SENDER_EMAIL');
-            $senderName = env('BREVO_SENDER_NAME');
+            $apiKey = config('services.sendgrid.api_key');
+            $senderEmail = config('services.sendgrid.sender_email');
+            $senderName = config('services.sendgrid.sender_name');
 
             if (!$apiKey || !$senderEmail || !$senderName) {
-                Log::error('Brevo configuration missing');
+                Log::error('SendGrid configuration missing');
                 return false;
             }
 
-            $response = Http::withHeaders([
-                'api-key' => $apiKey,
-                'Content-Type' => 'application/json',
-            ])->post('https://api.brevo.com/v3/smtp/email', [
-                'sender' => [
-                    'name' => $senderName,
-                    'email' => $senderEmail,
-                ],
-                'to' => [
-                    [
-                        'email' => $toEmail,
-                        'name' => $toName,
-                    ],
-                ],
-                'subject' => 'Votre code de vérification - OM PAY',
-                'htmlContent' => self::getOtpEmailTemplate($toName, $otp),
-            ]);
+            $email = new Mail();
+            $email->setFrom($senderEmail, $senderName);
+            $email->setSubject('Votre code de vérification - OM PAY');
+            $email->addTo($toEmail, $toName);
+            $email->addContent("text/html", self::getOtpEmailTemplate($toName, $otp));
 
-            if ($response->successful()) {
-                Log::info("OTP email sent successfully to {$toEmail}");
+            $sendgrid = new SendGrid($apiKey);
+            $response = $sendgrid->send($email);
+
+            if ($response->statusCode() >= 200 && $response->statusCode() < 300) {
+                Log::info("OTP email sent successfully to {$toEmail} via SendGrid");
                 return true;
             } else {
-                Log::error("Failed to send OTP email to {$toEmail}: " . $response->body());
+                Log::error("Failed to send OTP email to {$toEmail} via SendGrid: " . $response->body());
                 return false;
             }
         } catch (\Exception $e) {
-            Log::error("Exception while sending OTP email to {$toEmail}: " . $e->getMessage());
+            Log::error("Exception while sending OTP email to {$toEmail} via SendGrid: " . $e->getMessage());
             return false;
         }
     }

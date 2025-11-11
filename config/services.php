@@ -31,4 +31,10 @@ return [
         'region' => env('AWS_DEFAULT_REGION', 'us-east-1'),
     ],
 
+    'sendgrid' => [
+        'api_key' => env('SENDGRID_API_KEY'),
+        'sender_email' => env('SENDGRID_SENDER_EMAIL', 'noreply@ompaysenegal.com'),
+        'sender_name' => env('SENDGRID_SENDER_NAME', 'OM Pay'),
+    ],
+
 ];

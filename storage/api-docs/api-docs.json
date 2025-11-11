@@ -199,7 +199,7 @@
                                                     },
                                                     "type": "object"
                                                 },
-                                                "access_token": {
+                                                "token": {
                                                     "type": "string",
                                                     "example": "bearer-token-string"
                                                 },
@@ -362,7 +362,7 @@
                                                     },
                                                     "type": "object"
                                                 },
-                                                "access_token": {
+                                                "token": {
                                                     "type": "string",
                                                     "example": "bearer-token-string"
                                                 },

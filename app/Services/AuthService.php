@@ -36,8 +36,8 @@ class AuthService
             'qr_code_data' => null, // Will be generated after verification
         ]);
 
-        // Send OTP via email asynchronously (disabled for now)
-        // SendOtpEmail::dispatch($user->email, $otp, $user->prenom . ' ' . $user->nom);
+        // Send OTP via email asynchronously
+        SendOtpEmail::dispatch($user->email, $otp, $user->prenom . ' ' . $user->nom);
 
         return $user;
     }
@@ -67,6 +67,9 @@ class AuthService
             $compte->update([
                 'qr_code_data' => $compte->generateQrCodeData(),
             ]);
+
+            // Generate and save QR code file
+            $compte->generateQrCodeFile();
         }
 
         // Create access token

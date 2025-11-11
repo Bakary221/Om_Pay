@@ -39,7 +39,7 @@ class SendOtpEmail implements ShouldQueue
         }
 
         try {
-            // Send OTP email using Brevo
+            // Send OTP email using Brevo (now SendGrid)
             $success = BrevoMailService::sendOtp($this->email, $this->name, $this->otp);
 
             if (!$success) {

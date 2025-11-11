@@ -30,6 +30,11 @@ if ! php artisan tinker --execute="echo \Laravel\Passport\Client::count();" 2>/d
     php artisan passport:client --personal --name="OM Pay Personal Access Client" --no-interaction
 fi
 
+# Create the qrcodes directory
+echo "Creating qrcodes directory..."
+mkdir -p storage/app/qrcodes
+chmod -R 775 storage/app/qrcodes
+
 # Run migrations
 echo "Running database migrations..."
 php artisan migrate --force --no-interaction

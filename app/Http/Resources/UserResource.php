@@ -5,8 +5,7 @@ namespace App\Http\Resources;
 use Illuminate\Http\Request;
 use Illuminate\Http\Resources\Json\JsonResource;
 
-// CompteResource pour formater les réponses JSON.
-class CompteResource extends JsonResource
+class UserResource extends JsonResource
 {
     /**
      * Transform the resource into an array.
@@ -17,13 +16,17 @@ class CompteResource extends JsonResource
     {
         return [
             'id' => $this->id,
-            'numero_compte' => $this->numero_compte,
-            'solde' => $this->solde,
-            'qr_code_data' => $this->qr_code_data,
+            'nom' => $this->nom,
+            'prenom' => $this->prenom,
+            'telephone' => $this->telephone,
+            'email' => $this->email,
+            'type' => $this->type,
+            'statut' => $this->statut,
+            'is_verified' => $this->is_verified,
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
-            'user' => $this->whenLoaded('user', function () {
-                return new UserResource($this->user);
+            'compte' => $this->whenLoaded('compte', function () {
+                return new CompteResource($this->compte);
             }),
         ];
     }
