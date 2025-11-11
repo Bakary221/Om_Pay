@@ -3,18 +3,22 @@ FROM composer:2.6 AS composer-build
 
 WORKDIR /app
 
+# Installer les extensions nécessaires pour Composer
+RUN apk add --no-cache libpng-dev libjpeg-turbo-dev freetype-dev \
+    && docker-php-ext-install gd
+
 # Copier composer files
 COPY composer.json composer.lock ./
 
 # Installer les dépendances
-RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts
+RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-dist --no-scripts --ignore-platform-req=ext-gd
 
 # Étape 2: Image finale pour l'application
 FROM php:8.3-fpm-alpine
 
 # Installer les extensions PHP nécessaires et bash pour Render
-RUN apk add --no-cache mysql-dev bash \
-    && docker-php-ext-install pdo pdo_mysql
+RUN apk add --no-cache mysql-dev bash libpng-dev libjpeg-turbo-dev freetype-dev \
+    && docker-php-ext-install pdo pdo_mysql gd
 
 # Créer un utilisateur non-root
 RUN addgroup -g 1000 laravel && adduser -G laravel -g laravel -s /bin/sh -D laravel
