@@ -3,11 +3,6 @@ FROM composer:2.6 AS composer-build
 
 WORKDIR /app
 
-# Installer PECL et MongoDB pour Composer
-RUN apk add --no-cache bash zlib-dev gcc musl-dev make autoconf g++ \
-    && pecl install mongodb \
-    && echo "extension=mongodb.so" > /usr/local/etc/php/conf.d/mongodb.ini
-
 # Copier composer files
 COPY composer.json composer.lock ./
 
@@ -19,9 +14,6 @@ FROM php:8.3-fpm-alpine
 
 # Installer les extensions PHP nécessaires et bash pour Render
 RUN apk add --no-cache mysql-dev bash \
-    && apk add --no-cache bash zlib-dev gcc musl-dev make autoconf g++ \
-    && pecl install mongodb \
-    && docker-php-ext-enable mongodb \
     && docker-php-ext-install pdo pdo_mysql
 
 # Créer un utilisateur non-root
@@ -47,7 +39,8 @@ RUN mkdir -p storage/framework/{cache,data,sessions,testing,views} \
 COPY start.sh /usr/local/bin/start.sh
 RUN chmod +x /usr/local/bin/start.sh
 
-USER root
+# Changer d'utilisateur après avoir créé les répertoires
+USER laravel
 
 # Exposer le port 9000 (port par défaut de Render)
 EXPOSE 9000

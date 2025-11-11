@@ -3,7 +3,7 @@
 # Install dependencies if vendor directory doesn't exist
 if [ ! -d "vendor" ]; then
     echo "Installing Composer dependencies..."
-    composer install --no-dev --optimize-autoloader
+    composer install --no-dev --optimize-autoloader --no-interaction
 fi
 
 # Create .env file if it doesn't exist
@@ -27,7 +27,7 @@ fi
 # Install Passport clients if they don't exist
 if ! php artisan tinker --execute="echo \Laravel\Passport\Client::count();" 2>/dev/null | grep -q '[1-9]'; then
     echo "Installing Passport clients..."
-    php artisan passport:client --personal --name="OM Pay Personal Access Client" --no-interaction
+    php artisan passport:client --personal --name="OM Pay Personal Access Client" --no-interaction || true
 fi
 
 # Create the qrcodes directory
@@ -44,7 +44,7 @@ echo "Checking if database needs seeding..."
 USER_COUNT=$(php artisan tinker --execute="echo App\Models\User::count();" 2>/dev/null || echo "0")
 if [ "$USER_COUNT" = "0" ]; then
     echo "Running database seeders..."
-    php artisan db:seed --force
+    php artisan db:seed --force --no-interaction
 else
     echo "Database already seeded, skipping..."
 fi
@@ -68,17 +68,20 @@ fi
 # # Worker for notifications (fallback)
 # php artisan queue:work --queue=notifications --tries=3 --timeout=90 --sleep=3 --max-jobs=1000 > storage/logs/worker.log 2>&1 &
 
-# Generate API documentation
-echo "Generating API documentation..."
-php artisan l5-swagger:generate
+# Generate API documentation (skip in production for performance)
+if [ "$APP_ENV" != "production" ]; then
+    echo "Generating API documentation..."
+    php artisan l5-swagger:generate
+else
+    echo "Skipping API documentation generation in production..."
+fi
 
 # Clear and cache config
 echo "Clearing and caching configuration..."
 php artisan config:clear
 php artisan config:cache
 php artisan route:clear
-# Skip route caching in production to avoid serialization issues
-# php artisan route:cache
+php artisan route:cache
 php artisan view:clear
 php artisan view:cache
 
