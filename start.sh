@@ -19,20 +19,20 @@ if [ -z "$APP_KEY" ] || [ "$APP_KEY" = "base64:" ]; then
 fi
 
 # Install Passport keys if they don't exist
-if [ ! -f "app/secrets/oauth/oauth-private.key" ]; then
+if [ ! -f "storage/oauth-private.key" ]; then
     echo "Installing Passport keys..."
-    php artisan passport:install --force
+    php artisan passport:keys
 fi
 
-
-# Set correct permissions for Passport keys
-echo "Setting correct permissions for Passport keys..."
-chmod 600 app/secrets/oauth/oauth-private.key
-chmod 600 app/secrets/oauth/oauth-public.key
+# Install Passport clients if they don't exist
+if ! php artisan tinker --execute="echo \Laravel\Passport\Client::count();" 2>/dev/null | grep -q '[1-9]'; then
+    echo "Installing Passport clients..."
+    php artisan passport:client --personal --name="OM Pay Personal Access Client" --no-interaction
+fi
 
 # Run migrations
 echo "Running database migrations..."
-php artisan migrate --force
+php artisan migrate --force --no-interaction
 
 # Run seeders only if database is empty
 echo "Checking if database needs seeding..."

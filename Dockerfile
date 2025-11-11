@@ -18,11 +18,11 @@ RUN composer install --no-dev --optimize-autoloader --no-interaction --prefer-di
 FROM php:8.3-fpm-alpine
 
 # Installer les extensions PHP nécessaires et bash pour Render
-RUN apk add --no-cache postgresql-dev bash \
+RUN apk add --no-cache mysql-dev bash \
     && apk add --no-cache bash zlib-dev gcc musl-dev make autoconf g++ \
     && pecl install mongodb \
     && docker-php-ext-enable mongodb \
-    && docker-php-ext-install pdo pdo_pgsql
+    && docker-php-ext-install pdo pdo_mysql
 
 # Créer un utilisateur non-root
 RUN addgroup -g 1000 laravel && adduser -G laravel -g laravel -s /bin/sh -D laravel
