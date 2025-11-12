@@ -38,19 +38,13 @@ class TransactionService
     }
 
     /**
-     * Effectuer un paiement à un marchand
+     * Effectuer un paiement à un marchand ou à un client
      */
-    public function effectuerPaiement(Compte $compteEmetteur, string $codeMarchand, float $montant): Transaction
+    public function effectuerPaiement(Compte $compteEmetteur, string $destinataire, float $montant): Transaction
     {
-        return DB::transaction(function () use ($compteEmetteur, $codeMarchand, $montant) {
+        return DB::transaction(function () use ($compteEmetteur, $destinataire, $montant) {
             // Vérifier les limites
             $this->verifierLimitesPaiement($montant);
-
-            // Trouver le marchand
-            $marchand = Marchand::where('code_marchand', $codeMarchand)->first();
-            if (!$marchand) {
-                throw new Exception('Marchand non trouvé');
-            }
 
             // Calculer les frais (0 pour paiement)
             $frais = 0;
@@ -60,19 +54,60 @@ class TransactionService
                 throw new Exception('Solde insuffisant');
             }
 
-            // Créer la transaction
-            $transaction = Transaction::create([
-                'reference' => Transaction::generateReference(),
-                'type' => 'paiement',
-                'statut' => 'reussi',
-                'compte_emetteur_id' => $compteEmetteur->id,
-                'marchand_id' => $marchand->id,
-                'montant' => $montant,
-                'frais' => $frais,
-                'description' => "Paiement marchand {$marchand->raison_sociale}",
-            ]);
+            // Essayer d'abord comme code marchand
+            $marchand = Marchand::where('code_marchand', $destinataire)->first();
 
-            return $transaction;
+            if ($marchand) {
+                // Paiement à un marchand
+                $transaction = Transaction::create([
+                    'reference' => Transaction::generateReference(),
+                    'type' => 'paiement',
+                    'statut' => 'reussi',
+                    'compte_emetteur_id' => $compteEmetteur->id,
+                    'marchand_id' => $marchand->id,
+                    'montant' => $montant,
+                    'frais' => $frais,
+                    'description' => "Paiement marchand {$marchand->raison_sociale}",
+                ]);
+
+                // Débiter le compte
+                $compteEmetteur->debit($montant + $frais);
+
+                return $transaction;
+            }
+
+            // Essayer comme numéro de téléphone
+            $compteDestinataire = Compte::whereHas('user', function ($query) use ($destinataire) {
+                $query->where('telephone', $destinataire);
+            })->first();
+
+            if ($compteDestinataire) {
+                // Empêcher le paiement vers soi-même
+                if ($compteEmetteur->id === $compteDestinataire->id) {
+                    throw new Exception('Impossible de payer vers son propre compte');
+                }
+
+                // Paiement à un client
+                $transaction = Transaction::create([
+                    'reference' => Transaction::generateReference(),
+                    'type' => 'paiement_client',
+                    'statut' => 'reussi',
+                    'compte_emetteur_id' => $compteEmetteur->id,
+                    'compte_destinataire_id' => $compteDestinataire->id,
+                    'montant' => $montant,
+                    'frais' => $frais,
+                    'description' => "Paiement vers {$compteDestinataire->numero_compte}",
+                ]);
+
+                // Débiter l'émetteur et créditer le destinataire
+                $compteEmetteur->debit($montant + $frais);
+                $compteDestinataire->credit($montant);
+
+                return $transaction;
+            }
+
+            // Aucun destinataire trouvé
+            throw new Exception('Destinataire non trouvé (code marchand ou numéro de téléphone invalide)');
         });
     }
 

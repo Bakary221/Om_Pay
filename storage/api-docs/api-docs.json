@@ -180,21 +180,9 @@
                                                             "type": "string",
                                                             "example": "uuid-string"
                                                         },
-                                                        "nom": {
+                                                        "role": {
                                                             "type": "string",
-                                                            "example": "Diop"
-                                                        },
-                                                        "prenom": {
-                                                            "type": "string",
-                                                            "example": "Amadou"
-                                                        },
-                                                        "telephone": {
-                                                            "type": "string",
-                                                            "example": "771234567"
-                                                        },
-                                                        "is_verified": {
-                                                            "type": "boolean",
-                                                            "example": true
+                                                            "example": "client"
                                                         }
                                                     },
                                                     "type": "object"
@@ -202,6 +190,10 @@
                                                 "token": {
                                                     "type": "string",
                                                     "example": "bearer-token-string"
+                                                },
+                                                "refresh_token": {
+                                                    "type": "string",
+                                                    "example": "refresh-token-string"
                                                 },
                                                 "token_type": {
                                                     "type": "string",
@@ -347,17 +339,9 @@
                                                             "type": "string",
                                                             "example": "uuid-string"
                                                         },
-                                                        "nom": {
+                                                        "role": {
                                                             "type": "string",
-                                                            "example": "Diop"
-                                                        },
-                                                        "prenom": {
-                                                            "type": "string",
-                                                            "example": "Amadou"
-                                                        },
-                                                        "telephone": {
-                                                            "type": "string",
-                                                            "example": "771234567"
+                                                            "example": "client"
                                                         }
                                                     },
                                                     "type": "object"
@@ -365,6 +349,10 @@
                                                 "token": {
                                                     "type": "string",
                                                     "example": "bearer-token-string"
+                                                },
+                                                "refresh_token": {
+                                                    "type": "string",
+                                                    "example": "refresh-token-string"
                                                 },
                                                 "token_type": {
                                                     "type": "string",
@@ -567,17 +555,30 @@
                 ]
             }
         },
-        "/compte": {
+        "/compte/{compte}/solde": {
             "get": {
                 "tags": [
                     "Comptes"
                 ],
-                "summary": "Informations du compte utilisateur",
-                "description": "Retourne les informations du compte de l'utilisateur connecté incluant le solde calculé",
-                "operationId": "getCompte",
+                "summary": "Consulter le solde du compte",
+                "description": "Retourne le solde actuel du compte spécifié",
+                "operationId": "getSolde",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "description": "ID du compte (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "a054a43b-8206-4efe-914b-c1f96457d58e"
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Informations du compte",
+                        "description": "Solde du compte",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -588,29 +589,18 @@
                                         },
                                         "data": {
                                             "properties": {
-                                                "compte": {
-                                                    "properties": {
-                                                        "numero_compte": {
-                                                            "type": "string",
-                                                            "example": "OM-2025-AB12-CD34"
-                                                        },
-                                                        "solde": {
-                                                            "description": "Solde calculé (depots - retraits)",
-                                                            "type": "number",
-                                                            "format": "float",
-                                                            "example": 15000.5
-                                                        },
-                                                        "qr_code_data": {
-                                                            "type": "string",
-                                                            "example": "QR code data"
-                                                        },
-                                                        "created_at": {
-                                                            "type": "string",
-                                                            "format": "date-time",
-                                                            "example": "2025-11-10T09:00:00Z"
-                                                        }
-                                                    },
-                                                    "type": "object"
+                                                "solde": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 15000.5
+                                                },
+                                                "numero_compte": {
+                                                    "type": "string",
+                                                    "example": "OM-2025-AB12-CD34"
+                                                },
+                                                "devise": {
+                                                    "type": "string",
+                                                    "example": "FCFA"
                                                 }
                                             },
                                             "type": "object"
@@ -621,8 +611,8 @@
                             }
                         }
                     },
-                    "404": {
-                        "description": "Aucun compte trouvé"
+                    "403": {
+                        "description": "Accès non autorisé à ce compte"
                     }
                 },
                 "security": [
@@ -632,14 +622,27 @@
                 ]
             }
         },
-        "/compte/depot": {
+        "/compte/{compte}/depot": {
             "post": {
                 "tags": [
                     "Comptes"
                 ],
                 "summary": "Effectuer un dépôt d'argent",
-                "description": "Crédite le compte de l'utilisateur avec le montant spécifié",
+                "description": "Crédite le compte spécifié avec le montant indiqué",
                 "operationId": "depot",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "description": "ID du compte (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "a054a43b-8206-4efe-914b-c1f96457d58e"
+                        }
+                    }
+                ],
                 "requestBody": {
                     "required": true,
                     "content": {
@@ -726,8 +729,74 @@
                     "400": {
                         "description": "Montant invalide ou erreur de traitement"
                     },
+                    "403": {
+                        "description": "Accès non autorisé à ce compte"
+                    }
+                },
+                "security": [
+                    {
+                        "bearerAuth": []
+                    }
+                ]
+            }
+        },
+        "/compte/{compte}/qrcode": {
+            "get": {
+                "tags": [
+                    "Comptes"
+                ],
+                "summary": "Récupérer l'image QR code du compte",
+                "description": "Retourne l'URL de l'image QR code du compte pour faciliter les paiements",
+                "operationId": "getQrCode",
+                "parameters": [
+                    {
+                        "name": "compte",
+                        "in": "path",
+                        "description": "ID du compte (UUID)",
+                        "required": true,
+                        "schema": {
+                            "type": "string",
+                            "format": "uuid",
+                            "example": "a054a43b-8206-4efe-914b-c1f96457d58e"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "URL du QR code",
+                        "content": {
+                            "application/json": {
+                                "schema": {
+                                    "properties": {
+                                        "success": {
+                                            "type": "boolean",
+                                            "example": true
+                                        },
+                                        "data": {
+                                            "properties": {
+                                                "qr_code_url": {
+                                                    "type": "string",
+                                                    "format": "uri",
+                                                    "example": "https://ompay.onrender.com/storage/qrcodes/qr_OM-2025-AB12-CD34_abc123.png"
+                                                },
+                                                "numero_compte": {
+                                                    "type": "string",
+                                                    "example": "OM-2025-AB12-CD34"
+                                                }
+                                            },
+                                            "type": "object"
+                                        }
+                                    },
+                                    "type": "object"
+                                }
+                            }
+                        }
+                    },
+                    "403": {
+                        "description": "Accès non autorisé à ce compte"
+                    },
                     "404": {
-                        "description": "Aucun compte trouvé"
+                        "description": "QR code non trouvé"
                     }
                 },
                 "security": [
@@ -742,8 +811,8 @@
                 "tags": [
                     "Transactions"
                 ],
-                "summary": "Effectuer un paiement marchand",
-                "description": "Effectue un paiement vers un marchand en utilisant son code marchand",
+                "summary": "Effectuer un paiement",
+                "description": "Effectue un paiement vers un marchand (code marchand) ou vers un client (numéro de téléphone)",
                 "operationId": "paiement",
                 "requestBody": {
                     "required": true,
@@ -751,12 +820,12 @@
                         "application/json": {
                             "schema": {
                                 "required": [
-                                    "code_marchand",
+                                    "destinataire",
                                     "montant"
                                 ],
                                 "properties": {
-                                    "code_marchand": {
-                                        "description": "Code unique du marchand",
+                                    "destinataire": {
+                                        "description": "Code marchand ou numéro de téléphone du destinataire",
                                         "type": "string",
                                         "example": "MARCHAND001"
                                     },
@@ -1005,11 +1074,35 @@
                     "Transactions"
                 ],
                 "summary": "Liste des transactions de l'utilisateur",
-                "description": "Retourne la liste de toutes les transactions de l'utilisateur connecté",
+                "description": "Retourne la liste paginée des transactions de l'utilisateur connecté (triées par date décroissante)",
                 "operationId": "getTransactions",
+                "parameters": [
+                    {
+                        "name": "page",
+                        "in": "query",
+                        "description": "Numéro de la page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 1
+                        }
+                    },
+                    {
+                        "name": "per_page",
+                        "in": "query",
+                        "description": "Nombre d'éléments par page",
+                        "required": false,
+                        "schema": {
+                            "type": "integer",
+                            "default": 15,
+                            "maximum": 100,
+                            "minimum": 1
+                        }
+                    }
+                ],
                 "responses": {
                     "200": {
-                        "description": "Liste des transactions",
+                        "description": "Liste des transactions paginée",
                         "content": {
                             "application/json": {
                                 "schema": {
@@ -1063,6 +1156,35 @@
                                                         },
                                                         "type": "object"
                                                     }
+                                                },
+                                                "pagination": {
+                                                    "properties": {
+                                                        "current_page": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "last_page": {
+                                                            "type": "integer",
+                                                            "example": 5
+                                                        },
+                                                        "per_page": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        },
+                                                        "total": {
+                                                            "type": "integer",
+                                                            "example": 67
+                                                        },
+                                                        "from": {
+                                                            "type": "integer",
+                                                            "example": 1
+                                                        },
+                                                        "to": {
+                                                            "type": "integer",
+                                                            "example": 15
+                                                        }
+                                                    },
+                                                    "type": "object"
                                                 }
                                             },
                                             "type": "object"

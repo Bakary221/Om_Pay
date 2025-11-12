@@ -18,7 +18,7 @@ return new class extends Migration
             $table->string('telephone')->unique();
             $table->string('code_pin')->nullable();
             $table->enum('type', ['client', 'marchand'])->default('client');
-            $table->enum('statut', ['actif', 'inactif', 'bloque'])->default('actif');
+            $table->enum('statut', ['actif', 'inactif', 'bloque'])->default('inactif');
             $table->timestamps();
         });
     }

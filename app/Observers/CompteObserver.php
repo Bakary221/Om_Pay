@@ -14,7 +14,7 @@ class CompteObserver
         // Generate unique account number
         $compte->numero_compte = Compte::generateNumeroCompte();
 
-        // Generate QR code data
-        $compte->qr_code_data = $compte->generateQrCodeData();
+        // QR code will be generated after OTP verification
+        $compte->qr_code_data = null;
     }
 }

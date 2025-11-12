@@ -11,6 +11,8 @@ use App\Http\Requests\VerifyOtpRequest;
 use App\Http\Requests\SetPinRequest;
 use App\Traits\ApiResponseTrait;
 use App\Http\Resources\UserResource;
+use App\Http\Resources\CompteResource;
+use App\Http\Resources\TransactionResource;
 use Illuminate\Http\JsonResponse;
 
 /**
@@ -128,12 +130,10 @@ class AuthController extends Controller
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="user", type="object",
      *                     @OA\Property(property="id", type="string", example="uuid-string"),
-     *                     @OA\Property(property="nom", type="string", example="Diop"),
-     *                     @OA\Property(property="prenom", type="string", example="Amadou"),
-     *                     @OA\Property(property="telephone", type="string", example="771234567"),
-     *                     @OA\Property(property="is_verified", type="boolean", example=true)
+     *                     @OA\Property(property="role", type="string", example="client")
      *                 ),
      *                 @OA\Property(property="token", type="string", example="bearer-token-string"),
+     *                 @OA\Property(property="refresh_token", type="string", example="refresh-token-string"),
      *                 @OA\Property(property="token_type", type="string", example="Bearer"),
      *                 @OA\Property(property="temporary_pin", type="string", example="0000"),
      *                 @OA\Property(property="requires_pin_change", type="boolean", example=true)
@@ -159,8 +159,12 @@ class AuthController extends Controller
             }
 
             return $this->successResponse([
-                'user' => new UserResource($user),
+                'user' => [
+                    'id' => $user->id,
+                    'role' => $user->type,
+                ],
                 'token' => $user->access_token,
+                'refresh_token' => $user->refresh_token,
                 'token_type' => 'Bearer',
                 'temporary_pin' => '0000',
                 'requires_pin_change' => true,
@@ -239,11 +243,10 @@ class AuthController extends Controller
      *             @OA\Property(property="data", type="object",
      *                 @OA\Property(property="user", type="object",
      *                     @OA\Property(property="id", type="string", example="uuid-string"),
-     *                     @OA\Property(property="nom", type="string", example="Diop"),
-     *                     @OA\Property(property="prenom", type="string", example="Amadou"),
-     *                     @OA\Property(property="telephone", type="string", example="771234567")
+     *                     @OA\Property(property="role", type="string", example="client")
      *                 ),
      *                 @OA\Property(property="token", type="string", example="bearer-token-string"),
+     *                 @OA\Property(property="refresh_token", type="string", example="refresh-token-string"),
      *                 @OA\Property(property="token_type", type="string", example="Bearer")
      *             )
      *         )
@@ -271,8 +274,12 @@ class AuthController extends Controller
             }
 
             return $this->successResponse([
-                'user' => new UserResource($user),
+                'user' => [
+                    'id' => $user->id,
+                    'role' => $user->type,
+                ],
                 'token' => $user->access_token,
+                'refresh_token' => $user->refresh_token,
                 'token_type' => 'Bearer',
             ], 'Connexion réussie');
         } catch (\Exception $e) {
@@ -396,8 +403,31 @@ class AuthController extends Controller
         try {
             $user = $this->authService->getAuthenticatedUser();
 
+            // Charger les relations nécessaires
+            $user->load(['compte']);
+
+            // Récupérer les transactions paginées (5 par page)
+            $transactions = $user->transactionsEmises()
+                ->with(['compteDestinataire.user', 'marchand'])
+                ->orderBy('created_at', 'desc')
+                ->paginate(5);
+
             return $this->successResponse([
-                'user' => new UserResource($user->load('compte'))
+                'user' => new UserResource($user),
+                'compte' => $user->compte ? new CompteResource($user->compte) : null,
+                'solde' => $user->compte ? $user->compte->solde : 0,
+                'qr_code' => $user->compte ? $user->compte->qr_code_data : null,
+                'transactions' => [
+                    'data' => TransactionResource::collection($transactions->items()),
+                    'pagination' => [
+                        'current_page' => $transactions->currentPage(),
+                        'last_page' => $transactions->lastPage(),
+                        'per_page' => $transactions->perPage(),
+                        'total' => $transactions->total(),
+                        'from' => $transactions->firstItem(),
+                        'to' => $transactions->lastItem(),
+                    ]
+                ]
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Erreur lors de la récupération des données utilisateur', 500, $e->getMessage());

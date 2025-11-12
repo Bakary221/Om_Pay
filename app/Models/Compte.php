@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
+use App\Services\QrCodeService;
 
 class Compte extends Model
 {
@@ -84,63 +85,44 @@ class Compte extends Model
     }
 
     /**
-     * Generate QR code data
+     * Generate QR code URL for this account
      */
-    public function generateQrCodeData(): string
-    {
-        return json_encode([
-            'type' => 'compte',
-            'numero_compte' => $this->numero_compte,
-            'user_id' => $this->user_id,
-        ]);
-    }
-
-    /**
-     * Generate and save QR code file
-     */
-    public function generateQrCodeFile(): string
+    public function generateQrCodeUrl(): string
     {
         try {
-            $qrCodeData = $this->generateQrCodeData();
-            $filename = 'qrcode_' . $this->numero_compte . '.png';
-            $path = storage_path('app/qrcodes/' . $filename);
-
-            // Ensure directory exists
-            $directory = dirname($path);
-            if (!is_dir($directory)) {
-                mkdir($directory, 0755, true);
-            }
-
-            // Generate QR code using GD backend (no imagick needed)
-            $qrCode = \SimpleSoftwareIO\QrCode\Facades\QrCode::format('png')
-                ->size(300)
-                ->margin(4)
-                ->generate($qrCodeData);
-
-            // Save to file
-            file_put_contents($path, $qrCode);
-
-            return $filename;
+            return QrCodeService::generateForCompte($this->numero_compte, $this->user_id);
         } catch (\Exception $e) {
-            // Log error but don't fail the registration
-            \Illuminate\Support\Facades\Log::error('Failed to generate QR code: ' . $e->getMessage());
+            \Illuminate\Support\Facades\Log::error('Failed to generate QR code URL: ' . $e->getMessage());
             return '';
         }
     }
 
     /**
-     * Get QR code file path
+     * Regenerate QR code URL (delete old one and create new)
      */
-    public function getQrCodePath(): string
+    public function regenerateQrCodeUrl(): string
     {
-        return storage_path('app/qrcodes/qrcode_' . $this->numero_compte . '.png');
+        try {
+            return QrCodeService::regenerateForCompte($this->numero_compte, $this->user_id, $this->qr_code_data);
+        } catch (\Exception $e) {
+            \Illuminate\Support\Facades\Log::error('Failed to regenerate QR code URL: ' . $e->getMessage());
+            return '';
+        }
     }
 
     /**
-     * Check if QR code file exists
+     * Get QR code URL attribute
      */
-    public function hasQrCodeFile(): bool
+    public function getQrCodeUrlAttribute(): string
     {
-        return file_exists($this->getQrCodePath());
+        return $this->qr_code_data ?: '';
+    }
+
+    /**
+     * Check if QR code URL exists
+     */
+    public function hasQrCodeUrl(): bool
+    {
+        return !empty($this->qr_code_data) && filter_var($this->qr_code_data, FILTER_VALIDATE_URL);
     }
 }

@@ -20,7 +20,7 @@ class PaiementRequest extends FormRequest
     public function rules(): array
     {
         return [
-            'code_marchand' => 'required|string|exists:marchands,code_marchand',
+            'destinataire' => 'required|string',
             'montant' => 'required|numeric|min:100|max:500000',
         ];
     }
@@ -31,8 +31,8 @@ class PaiementRequest extends FormRequest
     public function messages(): array
     {
         return [
-            'code_marchand.required' => 'Le code marchand est obligatoire',
-            'code_marchand.exists' => 'Code marchand invalide',
+            'destinataire.required' => 'Le destinataire est obligatoire (code marchand ou numéro de téléphone)',
+            'destinataire.string' => 'Le destinataire doit être une chaîne de caractères',
             'montant.required' => 'Le montant est obligatoire',
             'montant.numeric' => 'Le montant doit être un nombre',
             'montant.min' => 'Le montant minimum est de 100 FCFA',

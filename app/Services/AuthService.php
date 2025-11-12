@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\User;
 use App\Jobs\SendOtpEmail;
+use App\Services\QrCodeService;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Str;
@@ -28,6 +29,7 @@ class AuthService
             'is_verified' => false,
             'code_pin' => null, // Explicitly set to null
             'type' => 'client',
+            'statut' => 'inactif', // User is inactive until OTP verification
         ]);
 
         // Create compte and generate QR code
@@ -53,10 +55,11 @@ class AuthService
             return null;
         }
 
-        // Set temporary PIN (0000) and mark as verified
+        // Set temporary PIN (0000), mark as verified and activate user
         $user->update([
             'code_pin' => '0000', // PIN temporaire
             'is_verified' => true,
+            'statut' => 'actif', // Activate user after OTP verification
             'otp_code' => null,
             'otp_expires_at' => null,
         ]);
@@ -64,17 +67,18 @@ class AuthService
         // Generate QR code for compte
         $compte = $user->compte;
         if ($compte) {
+            $qrCodeUrl = $compte->generateQrCodeUrl();
             $compte->update([
-                'qr_code_data' => $compte->generateQrCodeData(),
+                'qr_code_data' => $qrCodeUrl,
             ]);
-
-            // Generate and save QR code file
-            $compte->generateQrCodeFile();
         }
 
         // Create access token
-        $token = $user->createToken('OM Pay API Token')->accessToken;
-        $user->access_token = $token;
+        $accessToken = $user->createToken('OM Pay API Token')->accessToken;
+        // Create refresh token
+        $refreshToken = $user->createToken('OM Pay Refresh Token')->accessToken;
+        $user->access_token = $accessToken;
+        $user->refresh_token = $refreshToken;
 
         return $user;
     }
@@ -112,10 +116,13 @@ class AuthService
         }
 
         // Create access token
-        $token = $user->createToken('OM Pay API Token')->accessToken;
+        $accessToken = $user->createToken('OM Pay API Token')->accessToken;
+        // Create refresh token
+        $refreshToken = $user->createToken('OM Pay Refresh Token')->accessToken;
 
-        // Add token to user for response
-        $user->access_token = $token;
+        // Add tokens to user for response
+        $user->access_token = $accessToken;
+        $user->refresh_token = $refreshToken;
 
         return $user;
     }

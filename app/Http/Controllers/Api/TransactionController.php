@@ -39,16 +39,16 @@ class TransactionController extends Controller
     /**
      * @OA\Post(
      *     path="/transactions/paiement",
-     *     summary="Effectuer un paiement marchand",
-     *     description="Effectue un paiement vers un marchand en utilisant son code marchand",
+     *     summary="Effectuer un paiement",
+     *     description="Effectue un paiement vers un marchand (code marchand) ou vers un client (numéro de téléphone)",
      *     operationId="paiement",
      *     tags={"Transactions"},
      *     security={{"bearerAuth":{}}},
      *     @OA\RequestBody(
      *         required=true,
      *         @OA\JsonContent(
-     *             required={"code_marchand", "montant"},
-     *             @OA\Property(property="code_marchand", type="string", example="MARCHAND001", description="Code unique du marchand"),
+     *             required={"destinataire", "montant"},
+     *             @OA\Property(property="destinataire", type="string", example="MARCHAND001", description="Code marchand ou numéro de téléphone du destinataire"),
      *             @OA\Property(property="montant", type="number", format="float", example=2500.00, description="Montant du paiement")
      *         )
      *     ),
@@ -98,12 +98,19 @@ class TransactionController extends Controller
 
             $transaction = $this->transactionService->effectuerPaiement(
                 $compte,
-                $request->input('code_marchand'),
+                $request->input('destinataire'),
                 $request->input('montant')
             );
 
+            // Charger les relations appropriées selon le type de paiement
+            if ($transaction->marchand_id) {
+                $transaction->load(['compteEmetteur', 'marchand']);
+            } else {
+                $transaction->load(['compteEmetteur.user', 'compteDestinataire.user']);
+            }
+
             return $this->successResponse([
-                'transaction' => new TransactionResource($transaction->load(['compteEmetteur', 'marchand']))
+                'transaction' => new TransactionResource($transaction)
             ], 'Paiement effectué avec succès');
         } catch (\Exception $e) {
             return $this->errorResponse($e->getMessage(), 400);
@@ -193,13 +200,27 @@ class TransactionController extends Controller
      * @OA\Get(
      *     path="/transactions",
      *     summary="Liste des transactions de l'utilisateur",
-     *     description="Retourne la liste de toutes les transactions de l'utilisateur connecté",
+     *     description="Retourne la liste paginée des transactions de l'utilisateur connecté (triées par date décroissante)",
      *     operationId="getTransactions",
      *     tags={"Transactions"},
      *     security={{"bearerAuth":{}}},
+     *     @OA\Parameter(
+     *         name="page",
+     *         in="query",
+     *         required=false,
+     *         description="Numéro de la page",
+     *         @OA\Schema(type="integer", default=1)
+     *     ),
+     *     @OA\Parameter(
+     *         name="per_page",
+     *         in="query",
+     *         required=false,
+     *         description="Nombre d'éléments par page",
+     *         @OA\Schema(type="integer", default=15, minimum=1, maximum=100)
+     *     ),
      *     @OA\Response(
      *         response=200,
-     *         description="Liste des transactions",
+     *         description="Liste des transactions paginée",
      *         @OA\JsonContent(
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="data", type="object",
@@ -212,6 +233,14 @@ class TransactionController extends Controller
      *                         @OA\Property(property="statut", type="string", enum={"reussi", "echec"}, example="reussi"),
      *                         @OA\Property(property="created_at", type="string", format="date-time", example="2025-11-10T09:00:00Z")
      *                     )
+     *                 ),
+     *                 @OA\Property(property="pagination", type="object",
+     *                     @OA\Property(property="current_page", type="integer", example=1),
+     *                     @OA\Property(property="last_page", type="integer", example=5),
+     *                     @OA\Property(property="per_page", type="integer", example=15),
+     *                     @OA\Property(property="total", type="integer", example=67),
+     *                     @OA\Property(property="from", type="integer", example=1),
+     *                     @OA\Property(property="to", type="integer", example=15)
      *                 )
      *             )
      *         )
@@ -222,10 +251,19 @@ class TransactionController extends Controller
     {
         try {
             $user = auth()->user();
-            $transactions = $this->transactionRepository->getUserTransactions($user);
+            $perPage = request('per_page', 15);
+            $transactions = $this->transactionRepository->getUserTransactions($user, $perPage);
 
             return $this->successResponse([
-                'transactions' => TransactionResource::collection($transactions)
+                'transactions' => TransactionResource::collection($transactions->items()),
+                'pagination' => [
+                    'current_page' => $transactions->currentPage(),
+                    'last_page' => $transactions->lastPage(),
+                    'per_page' => $transactions->perPage(),
+                    'total' => $transactions->total(),
+                    'from' => $transactions->firstItem(),
+                    'to' => $transactions->lastItem(),
+                ]
             ]);
         } catch (\Exception $e) {
             return $this->errorResponse('Erreur lors de la récupération des transactions', 500, $e->getMessage());
