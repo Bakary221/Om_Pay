@@ -128,10 +128,6 @@ class AuthController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Vérification réussie. Votre PIN temporaire est 0000. Veuillez le changer immédiatement."),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="user", type="object",
-     *                     @OA\Property(property="id", type="string", example="uuid-string"),
-     *                     @OA\Property(property="role", type="string", example="client")
-     *                 ),
      *                 @OA\Property(property="token", type="string", example="bearer-token-string"),
      *                 @OA\Property(property="refresh_token", type="string", example="refresh-token-string"),
      *                 @OA\Property(property="token_type", type="string", example="Bearer"),
@@ -159,10 +155,6 @@ class AuthController extends Controller
             }
 
             return $this->successResponse([
-                'user' => [
-                    'id' => $user->id,
-                    'role' => $user->type,
-                ],
                 'token' => $user->access_token,
                 'refresh_token' => $user->refresh_token,
                 'token_type' => 'Bearer',
@@ -241,10 +233,6 @@ class AuthController extends Controller
      *             @OA\Property(property="success", type="boolean", example=true),
      *             @OA\Property(property="message", type="string", example="Connexion réussie"),
      *             @OA\Property(property="data", type="object",
-     *                 @OA\Property(property="user", type="object",
-     *                     @OA\Property(property="id", type="string", example="uuid-string"),
-     *                     @OA\Property(property="role", type="string", example="client")
-     *                 ),
      *                 @OA\Property(property="token", type="string", example="bearer-token-string"),
      *                 @OA\Property(property="refresh_token", type="string", example="refresh-token-string"),
      *                 @OA\Property(property="token_type", type="string", example="Bearer")
@@ -274,10 +262,6 @@ class AuthController extends Controller
             }
 
             return $this->successResponse([
-                'user' => [
-                    'id' => $user->id,
-                    'role' => $user->type,
-                ],
                 'token' => $user->access_token,
                 'refresh_token' => $user->refresh_token,
                 'token_type' => 'Bearer',
@@ -388,10 +372,22 @@ class AuthController extends Controller
      *                     @OA\Property(property="nom", type="string", example="Diop"),
      *                     @OA\Property(property="prenom", type="string", example="Amadou"),
      *                     @OA\Property(property="telephone", type="string", example="771234567"),
-     *                     @OA\Property(property="compte", type="object",
-     *                         @OA\Property(property="numero_compte", type="string", example="OM-2025-AB12-CD34"),
-     *                         @OA\Property(property="solde", type="number", format="float", example=15000.50)
-     *                     )
+     *                     @OA\Property(property="email", type="string", example="amadou.diop@example.com"),
+     *                     @OA\Property(property="type", type="string", example="client"),
+     *                     @OA\Property(property="statut", type="string", example="actif"),
+     *                     @OA\Property(property="is_verified", type="boolean", example=true),
+     *                     @OA\Property(property="created_at", type="string", format="date-time"),
+     *                     @OA\Property(property="updated_at", type="string", format="date-time")
+     *                 ),
+     *                 @OA\Property(property="compte", type="object",
+     *                     @OA\Property(property="numero_compte", type="string", example="OM-2025-AB12-CD34"),
+     *                     @OA\Property(property="solde", type="number", format="float", example=15000.50)
+     *                 ),
+     *                 @OA\Property(property="solde", type="number", format="float", example=15000.50),
+     *                 @OA\Property(property="qr_code", type="string", example="QR code data"),
+     *                 @OA\Property(property="transactions", type="object",
+     *                     @OA\Property(property="data", type="array", @OA\Items(type="object")),
+     *                     @OA\Property(property="pagination", type="object")
      *                 )
      *             )
      *         )

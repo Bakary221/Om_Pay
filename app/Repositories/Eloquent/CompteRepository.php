@@ -8,6 +8,11 @@ use App\Repositories\Interfaces\CompteRepositoryInterface;
 
 class CompteRepository implements CompteRepositoryInterface
 {
+    public function create(array $data): Compte
+    {
+        return Compte::create($data);
+    }
+
     public function findByUser(User $user): ?Compte
     {
         return $user->compte;

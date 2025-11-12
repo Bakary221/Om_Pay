@@ -31,9 +31,7 @@ class TransactionResource extends JsonResource
                     'user' => $this->whenLoaded('compteEmetteur.user', function () {
                         return [
                             'id' => $this->compteEmetteur->user->id,
-                            'nom' => $this->compteEmetteur->user->nom,
-                            'prenom' => $this->compteEmetteur->user->prenom,
-                            'telephone' => $this->compteEmetteur->user->telephone,
+                            'role' => $this->compteEmetteur->user->type,
                         ];
                     }),
                 ];
@@ -45,9 +43,7 @@ class TransactionResource extends JsonResource
                     'user' => $this->whenLoaded('compteDestinataire.user', function () {
                         return [
                             'id' => $this->compteDestinataire->user->id,
-                            'nom' => $this->compteDestinataire->user->nom,
-                            'prenom' => $this->compteDestinataire->user->prenom,
-                            'telephone' => $this->compteDestinataire->user->telephone,
+                            'role' => $this->compteDestinataire->user->type,
                         ];
                     }),
                 ];

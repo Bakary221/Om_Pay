@@ -7,6 +7,7 @@ use App\Models\User;
 
 interface CompteRepositoryInterface
 {
+    public function create(array $data): Compte;
     public function findByUser(User $user): ?Compte;
     public function findByNumero(string $numero): ?Compte;
     public function getSolde(Compte $compte): float;

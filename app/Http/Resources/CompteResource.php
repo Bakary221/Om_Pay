@@ -23,7 +23,10 @@ class CompteResource extends JsonResource
             'created_at' => $this->created_at,
             'updated_at' => $this->updated_at,
             'user' => $this->whenLoaded('user', function () {
-                return new UserResource($this->user);
+                return [
+                    'id' => $this->user->id,
+                    'role' => $this->user->type,
+                ];
             }),
         ];
     }

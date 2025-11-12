@@ -174,19 +174,6 @@
                                         },
                                         "data": {
                                             "properties": {
-                                                "user": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string",
-                                                            "example": "uuid-string"
-                                                        },
-                                                        "role": {
-                                                            "type": "string",
-                                                            "example": "client"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                },
                                                 "token": {
                                                     "type": "string",
                                                     "example": "bearer-token-string"
@@ -333,19 +320,6 @@
                                         },
                                         "data": {
                                             "properties": {
-                                                "user": {
-                                                    "properties": {
-                                                        "id": {
-                                                            "type": "string",
-                                                            "example": "uuid-string"
-                                                        },
-                                                        "role": {
-                                                            "type": "string",
-                                                            "example": "client"
-                                                        }
-                                                    },
-                                                    "type": "object"
-                                                },
                                                 "token": {
                                                     "type": "string",
                                                     "example": "bearer-token-string"
@@ -521,18 +495,65 @@
                                                             "type": "string",
                                                             "example": "771234567"
                                                         },
-                                                        "compte": {
-                                                            "properties": {
-                                                                "numero_compte": {
-                                                                    "type": "string",
-                                                                    "example": "OM-2025-AB12-CD34"
-                                                                },
-                                                                "solde": {
-                                                                    "type": "number",
-                                                                    "format": "float",
-                                                                    "example": 15000.5
-                                                                }
-                                                            },
+                                                        "email": {
+                                                            "type": "string",
+                                                            "example": "amadou.diop@example.com"
+                                                        },
+                                                        "type": {
+                                                            "type": "string",
+                                                            "example": "client"
+                                                        },
+                                                        "statut": {
+                                                            "type": "string",
+                                                            "example": "actif"
+                                                        },
+                                                        "is_verified": {
+                                                            "type": "boolean",
+                                                            "example": true
+                                                        },
+                                                        "created_at": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        },
+                                                        "updated_at": {
+                                                            "type": "string",
+                                                            "format": "date-time"
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "compte": {
+                                                    "properties": {
+                                                        "numero_compte": {
+                                                            "type": "string",
+                                                            "example": "OM-2025-AB12-CD34"
+                                                        },
+                                                        "solde": {
+                                                            "type": "number",
+                                                            "format": "float",
+                                                            "example": 15000.5
+                                                        }
+                                                    },
+                                                    "type": "object"
+                                                },
+                                                "solde": {
+                                                    "type": "number",
+                                                    "format": "float",
+                                                    "example": 15000.5
+                                                },
+                                                "qr_code": {
+                                                    "type": "string",
+                                                    "example": "QR code data"
+                                                },
+                                                "transactions": {
+                                                    "properties": {
+                                                        "data": {
+                                                            "type": "array",
+                                                            "items": {
+                                                                "type": "object"
+                                                            }
+                                                        },
+                                                        "pagination": {
                                                             "type": "object"
                                                         }
                                                     },

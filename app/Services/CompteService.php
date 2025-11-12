@@ -3,40 +3,33 @@
 namespace App\Services;
 
 use App\Models\Compte;
-use App\Models\Client;
 use App\Models\User;
 use App\Repositories\Interfaces\CompteRepositoryInterface;
 use App\Repositories\Interfaces\UserRepositoryInterface;
-use App\Repositories\Interfaces\ClientRepositoryInterface;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
 
 class CompteService
 {
     public function __construct(
         private CompteRepositoryInterface $compteRepository,
-        private UserRepositoryInterface $userRepository,
-        private ClientRepositoryInterface $clientRepository
+        private UserRepositoryInterface $userRepository
     ) {}
 
     /**
-     * Créer un nouveau compte bancaire
+     * Créer un nouveau compte bancaire pour un utilisateur
      */
-    public function createCompte(array $data): Compte
+    public function createCompteForUser(User $user): Compte
     {
         DB::beginTransaction();
 
         try {
-            // Créer ou récupérer le client
-            $client = $this->getOrCreateClient($data['client']);
-
             // Créer le compte (l'observer gère le numéro et la transaction initiale)
             $compte = $this->compteRepository->create([
                 'id' => Str::uuid(),
-                'client_id' => $client->id,
-                'type' => $data['type'],
-                'statut' => 'actif',
+                'user_id' => $user->id,
+                'numero_compte' => Compte::generateNumeroCompte(),
+                'qr_code_data' => null, // Sera généré après
             ]);
 
             DB::commit();
@@ -49,72 +42,26 @@ class CompteService
     }
 
     /**
-     * Mettre à jour les informations du client associé à un compte
+     * Mettre à jour les informations de l'utilisateur associé à un compte
      */
-    public function updateClientInfo(Compte $compte, array $data): void
+    public function updateUserInfo(Compte $compte, array $data): void
     {
-        $user = $compte->client->user;
+        $user = $compte->user;
 
-        // Mettre à jour les champs du User (client)
-        if (isset($data['titulaire'])) {
-            $parts = explode(' ', $data['titulaire'], 2);
-            $user->nom = $parts[0] ?? $data['titulaire'];
-            $user->prenom = $parts[1] ?? '';
+        // Mettre à jour les champs du User
+        if (isset($data['nom'])) {
+            $user->nom = $data['nom'];
+        }
+        if (isset($data['prenom'])) {
+            $user->prenom = $data['prenom'];
         }
         if (isset($data['telephone'])) {
             $user->telephone = $data['telephone'];
         }
         if (isset($data['email'])) {
             $user->email = $data['email'];
-            $user->login = $data['email']; // Mettre à jour login si email change
-        }
-        if (isset($data['nci'])) {
-            $user->cni = $data['nci'];
         }
 
         $this->userRepository->update($user, $user->toArray());
-    }
-
-    /**
-     * Créer ou récupérer un client
-     */
-    private function getOrCreateClient(array $clientData): Client
-    {
-        // Si un ID de client est fourni, le récupérer
-        if (!empty($clientData['id'])) {
-            $client = $this->clientRepository->find($clientData['id']);
-            if (!$client) {
-                throw new \Exception('Client spécifié non trouvé dans le système');
-            }
-            return $client;
-        }
-
-        // Créer un nouvel utilisateur
-        $user = $this->userRepository->create([
-            'id' => Str::uuid(),
-            'nom' => explode(' ', $clientData['titulaire'])[0] ?? $clientData['titulaire'],
-            'prenom' => explode(' ', $clientData['titulaire'])[1] ?? '',
-            'login' => $clientData['email'],
-            'email' => $clientData['email'], // Ajouter le champ email
-            'telephone' => $clientData['telephone'],
-            'permissions' => ['compte:read', 'compte:write', 'transaction:read'],
-            'status' => 'Actif',
-            'cni' => $clientData['nci'],
-            'code' => Str::random(6),
-            'sexe' => 'Homme',
-            'role' => 'client',
-            'is_verified' => 1,
-            'date_naissance' => now()->subYears(25)->format('Y-m-d'),
-            'password' => Hash::make(Str::random(12)),
-        ]);
-
-        // Créer le client
-        $client = $this->clientRepository->create([
-            'id' => Str::uuid(),
-            'user_id' => $user->id,
-            'profession' => $clientData['profession'] ?? 'Non spécifiée',
-        ]);
-
-        return $client;
     }
 }
