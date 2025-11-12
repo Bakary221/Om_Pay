@@ -28,7 +28,7 @@ use Illuminate\Http\JsonResponse;
  * )
  *
  * @OA\Server(
- *     url="https://ompay-isuf.onrender.com/api",
+ *     url="https://om-pay-latest.onrender.com/api",
  *     description="Serveur de production"
  * )
  *
