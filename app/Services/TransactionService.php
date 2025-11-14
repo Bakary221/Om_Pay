@@ -58,20 +58,29 @@ class TransactionService
             $marchand = Marchand::where('code_marchand', $destinataire)->first();
 
             if ($marchand) {
+                // Vérifier si le marchand a un compte
+                $compteMarchand = $marchand->user->compte ?? null;
+
+                if (!$compteMarchand) {
+                    throw new Exception('Le marchand n\'a pas de compte associé');
+                }
+
                 // Paiement à un marchand
                 $transaction = Transaction::create([
                     'reference' => Transaction::generateReference(),
                     'type' => 'paiement',
                     'statut' => 'reussi',
                     'compte_emetteur_id' => $compteEmetteur->id,
+                    'compte_destinataire_id' => $compteMarchand->id,
                     'marchand_id' => $marchand->id,
                     'montant' => $montant,
                     'frais' => $frais,
                     'description' => "Paiement marchand {$marchand->raison_sociale}",
                 ]);
 
-                // Débiter le compte
+                // Débiter le compte émetteur et créditer le compte marchand
                 $compteEmetteur->debit($montant + $frais);
+                $compteMarchand->credit($montant);
 
                 return $transaction;
             }
